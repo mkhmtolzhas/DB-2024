@@ -25,8 +25,3 @@ create table tasks (
 DROP TABLE tasks;
 
 DROP DATABASE lab1;
-
-
-
-
-
