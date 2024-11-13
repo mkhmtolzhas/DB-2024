@@ -1,0 +1,132 @@
+create database lab7;
+
+-- initializing tables
+CREATE TABLE locations(
+    location_id SERIAL PRIMARY KEY,
+    street_address VARCHAR(25),
+    postal_code VARCHAR(12),
+    city VARCHAR(30),
+    state_province VARCHAR(12)
+);
+
+CREATE TABLE departments(
+    department_id SERIAL PRIMARY KEY,
+    department_name VARCHAR(50) UNIQUE,
+    budget INTEGER,
+    location_id INTEGER REFERENCES locations
+);
+
+CREATE TABLE employees(
+    employee_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    email VARCHAR(50),
+    phone_number VARCHAR(20),
+    salary INTEGER,
+    department_id INTEGER REFERENCES departments
+);
+
+
+INSERT INTO locations (street_address, postal_code, city, state_province) VALUES
+('123 Main St', '11111', 'New York', 'NY'),
+('456 Elm St', '22222', 'Los Angeles', 'CA'),
+('789 Oak St', '33333', 'Chicago', 'IL'),
+('101 Pine St', '44444', 'Houston', 'TX'),
+('202 Maple St', '55555', 'Miami', 'FL');
+
+INSERT INTO departments (department_name, budget, location_id) VALUES
+('IT', 500000, 1),
+('HR', 200000, 2),
+('Sales', 300000, 3),
+('Marketing', 250000, 4),
+('Finance', 350000, 5);
+
+INSERT INTO employees (first_name, last_name, email, phone_number, salary, department_id) VALUES
+('John', 'Doe', 'john.doe@example.com', '123-456-7890', 70000, 1),
+('Jane', 'Smith', 'jane.smith@example.com', '234-567-8901', 80000, 1),
+('Alice', 'Johnson', 'alice.johnson@example.com', '345-678-9012', 60000, 2),
+('Bob', 'Brown', 'bob.brown@example.com', '456-789-0123', 65000, 3),
+('Charlie', 'Davis', 'charlie.davis@example.com', '567-890-1234', 72000, 4),
+('Eve', 'Miller', 'eve.miller@example.com', '678-901-2345', 73000, 5),
+('Frank', 'Wilson', 'frank.wilson@example.com', '789-012-3456', 67000, 3),
+('Grace', 'Taylor', 'grace.taylor@example.com', '890-123-4567', 69000, 2),
+('Henry', 'Anderson', 'henry.anderson@example.com', '901-234-5678', 75000, 4);
+
+
+CREATE TABLE countries (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL
+);
+
+-- Заполнение таблицы countries данными
+INSERT INTO countries (name) VALUES
+('Kazakhstan'),
+('Russia'),
+('USA'),
+('China'),
+('Germany');
+
+
+DO $$
+BEGIN
+    -- Добавление 1000 записей с разными именами стран
+    FOR i IN 1..1000 LOOP
+        INSERT INTO countries (name) VALUES ('Country_' || i);
+    END LOOP;
+END $$;
+
+
+
+DO $$
+BEGIN
+    -- Добавление 1000 записей с различными именами, фамилиями и зарплатами
+    FOR i IN 1..1000 LOOP
+        INSERT INTO employees (first_name, last_name, email, phone_number, salary, department_id)
+        VALUES (
+            'Name_' || i,
+            'Surname_' || i,
+            'employee_' || i || '@example.com',
+            '123-456-' || LPAD(i::text, 4, '0'),
+            50000 + (i * 10) % 30000, -- Зарплата от 50000 до 80000
+            (i % 5) + 1  -- Распределение по department_id от 1 до 5
+        );
+    END LOOP;
+END $$;
+
+
+
+select * from employees;
+-- 1
+create index index_countries_name on countries(name);
+
+explain analyse
+select * from countries where name = 'China';
+
+-- 2
+create index index_employees_firstname_lastname on employees(first_name, last_name);
+
+explain analyse
+select * from employees where first_name = 'Name_26' and last_name = 'Surname_26';
+
+-- 3
+create unique index index_employees_salary on employees(salary);
+
+explain analyse
+select * from employees where salary > 60000 and salary < 70000;
+
+-- 4
+create index index_employeer_name_substring on employees ((substring(first_name FROM 1 FOR 4)));
+
+explain analyse
+select * from employees where substring(first_name from 1 for 4) = 'abcd';
+
+-- 5
+create index index_emplyees_departaments on employees (department_id, salary);
+
+drop index index_emplyees_departaments;
+
+explain analyse
+SELECT * FROM employees e JOIN departments d
+ON d.department_id = e.department_id WHERE
+d.budget > 300000 AND e.salary < 50450;
+
